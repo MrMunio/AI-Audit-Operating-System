@@ -1,0 +1,6 @@
+{
+  "name": "AI Audit Operating System",
+  "description": "Enterprise audit platform with automated document classification, OCR extraction, deterministic rule engine, evidence verification, and risk reporting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

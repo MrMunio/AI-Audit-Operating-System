@@ -1,4 +1,4 @@
-export type AuditCategory = 
+export type AuditCategory =
   | 'financial'
   | 'operational'
   | 'compliance'
@@ -11,43 +11,79 @@ export type FindingStatus = 'PASS' | 'FAIL' | 'WARNING';
 export type OcrEngineType = 'tesseract' | 'vlm' | 'document_intelligence';
 export type LlmProviderType = 'gemini' | 'openai_compatible';
 
+export type ExtractionStatus =
+  | 'success'
+  | 'data_not_found'
+  | 'partial'
+  | 'uncertain'
+  | 'failed'
+  | 'manual_entry';
+
 export interface RequiredDocumentDef {
   type: string;
   name: string;
   description: string;
   isMandatory: boolean;
+  allowMultiple?: boolean; // When true, multiple files can be classified under this category
+  maxFiles?: number;
 }
 
-export interface ExtractedFieldDef {
-  key: string;
-  label: string;
-  type: 'string' | 'number' | 'date' | 'boolean' | 'array';
-  description: string;
+export type FieldSchemaType = 'string' | 'number' | 'integer' | 'boolean' | 'date' | 'object' | 'array';
+
+export interface FieldSchemaProperty {
+  type: FieldSchemaType;
+  title?: string;
+  label?: string;
+  description?: string;
+  required?: boolean | string[];
+  properties?: Record<string, FieldSchemaProperty>;
+  items?: FieldSchemaProperty;
+  enum?: (string | number)[];
+  format?: string;
+  metadata?: Record<string, any>;
 }
 
-export interface AuditRuleDef {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  severity: Severity;
-  expressionDescription: string;
-  // Function evaluated deterministically
-  evaluate: (fields: ExtractedFieldMap, documents: UploadedDocument[]) => AuditFinding;
+export interface DocumentFieldSchema {
+  type: 'object';
+  title?: string;
+  description?: string;
+  required?: string[];
+  properties: Record<string, FieldSchemaProperty>;
 }
 
-export interface ExtractedField {
-  key: string;
-  label: string;
+export interface FieldEvidence {
+  page_number?: number | string;
+  document_name?: string;
+  document_id?: string;
+  evidence_text: string;
+  bounding_box?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+export interface ExtractedFieldNode {
+  field_key?: string;
+  field_label?: string;
   value: any;
-  confidence: number; // 0 to 1
-  sourceDocument: string;
-  sourcePage: number;
+  chain_of_thought?: string;
+  extraction_status: ExtractionStatus;
+  evidences: FieldEvidence[];
+  is_user_verified?: boolean;
+  confidence?: number;
+  // Backward compatibility fields
+  key?: string;
+  label?: string;
+  sourceDocument?: string;
+  sourcePage?: number;
   rawSnippet?: string;
-  isUserVerified?: boolean;
 }
 
-export type ExtractedFieldMap = Record<string, ExtractedField>;
+export type ExtractedFieldMap = Record<string, ExtractedFieldNode | any>;
+
+export type CleanExtractedData = Record<string, any>;
 
 export interface UploadedDocument {
   id: string;
@@ -67,6 +103,8 @@ export interface MissingEvidenceItem {
   documentName: string;
   isMandatory: boolean;
   status: 'uploaded' | 'missing' | 'waived';
+  allowMultiple?: boolean;
+  uploadedCount?: number;
   waiverReason?: string;
   supportingNotes?: string;
   waivedBy?: string;
@@ -94,6 +132,22 @@ export interface AuditFinding {
   recommendation: string;
 }
 
+export interface AuditRuleDef {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  severity: Severity;
+  expressionDescription: string;
+  evaluate: (
+    fields: CleanExtractedData,
+    documents: UploadedDocument[],
+    rawFieldNodes?: ExtractedFieldMap
+  ) => AuditFinding;
+}
+
+export * from '../models/auditFinding';
+
 export interface AuditModule {
   id: string;
   title: string;
@@ -101,15 +155,11 @@ export interface AuditModule {
   description: string;
   iconName: string;
   requiredDocuments: RequiredDocumentDef[];
-  extractedFieldsSchema: ExtractedFieldDef[];
   /**
-   * Per-document-type scoped field schemas for LLM extraction.
+   * JSON Schema definition per document category.
    * Key = classifiedType (e.g. 'bank_statement', 'general_ledger').
-   * Each entry contains only the fields that should be extracted from that document type.
-   * When defined, extraction runs once per uploaded document using its scoped fields.
-   * Falls back to extractedFieldsSchema if a document type has no entry here.
    */
-  documentFieldSchemas?: Record<string, ExtractedFieldDef[]>;
+  documentFieldSchemas: Record<string, DocumentFieldSchema>;
   rules: AuditRuleDef[];
   samplePackName?: string;
 }
@@ -123,6 +173,7 @@ export interface AuditSession {
   status: 'document_upload' | 'extraction' | 'review' | 'rule_evaluation' | 'complete';
   documents: UploadedDocument[];
   extractedFields: ExtractedFieldMap;
+  cleanedData?: CleanExtractedData;
   missingEvidence: MissingEvidenceItem[];
   findings: AuditFinding[];
   overallRiskScore: 'HIGH RISK' | 'MEDIUM RISK' | 'LOW RISK' | 'PASS';
@@ -135,6 +186,11 @@ export interface SystemConfig {
   llmBaseUrl: string;
   llmModelId: string;
   llmApiKeyConfigured: boolean;
+  geminiKeyConfigured?: boolean;
   ocrEngine: OcrEngineType;
   databaseUrl: string;
+  fuzzyMatchThreshold?: number;
+  maxMultiFilesClassify?: number;
+  reviewerName?: string;
+  reviewerTitle?: string;
 }

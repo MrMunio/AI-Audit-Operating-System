@@ -147,14 +147,19 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({
                 </div>
 
                 {/* Description */}
-                <p className="text-xs text-gray-400 line-clamp-2 mb-4 leading-relaxed">
+                <p className="text-xs text-gray-400 line-clamp-3 mb-4 leading-relaxed">
                   {module.description}
                 </p>
 
                 {/* Required Documents Badge List */}
                 <div className="mb-4">
-                  <div className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Required Evidence ({module.requiredDocuments.length})
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-mono font-semibold text-gray-500 uppercase tracking-wider">
+                      Required Evidence ({module.requiredDocuments.length})
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400/90 bg-emerald-950/40 border border-emerald-800/40 px-1.5 py-0.2 rounded">
+                      {module.rules.length} Rules
+                    </span>
                   </div>
                   <div className="flex flex-wrap gap-1">
                     {module.requiredDocuments.map((doc, idx) => (
@@ -171,7 +176,7 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({
 
               {/* Actions Footer */}
               <div className="pt-3 border-t border-[#2A2D35] flex items-center justify-between gap-2">
-                {module.samplePackName ? (
+                {module.samplePackName && (
                   <button
                     onClick={() => onLoadSamplePack(module.id)}
                     className="flex items-center space-x-1 text-[11px] font-mono font-semibold text-blue-400 hover:text-blue-300 bg-blue-950/40 hover:bg-blue-900/60 px-2.5 py-1.5 rounded transition border border-blue-800/50 cursor-pointer"
@@ -180,10 +185,6 @@ export const ModuleSelector: React.FC<ModuleSelectorProps> = ({
                     <Sparkles className="w-3 h-3 text-blue-400" />
                     <span>Demo Pack</span>
                   </button>
-                ) : (
-                  <span className="text-[10px] text-gray-500 font-mono">
-                    {module.rules.length} Rules Engine
-                  </span>
                 )}
 
                 <button

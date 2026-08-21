@@ -286,7 +286,8 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
 
             <div className="space-y-3">
               {module.requiredDocuments.map(req => {
-                const isUploaded = uploadedDocs.some(d => d.classifiedType === req.type);
+                const matchingDocs = uploadedDocs.filter(d => d.classifiedType === req.type);
+                const isUploaded = matchingDocs.length > 0;
 
                 return (
                   <div
@@ -300,18 +301,25 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold">{req.name}</span>
+                      <div className="flex items-center space-x-1.5 min-w-0">
+                        <span className="text-xs font-bold truncate">{req.name}</span>
+                        {req.allowMultiple && (
+                          <span className="text-[9px] bg-blue-950/80 text-blue-300 border border-blue-800/60 px-1.5 py-0.2 rounded shrink-0">
+                            Multi-File
+                          </span>
+                        )}
+                      </div>
                       {isUploaded ? (
-                        <span className="text-[10px] font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-2 py-0.5 rounded flex items-center space-x-1">
+                        <span className="text-[10px] font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 px-2 py-0.5 rounded flex items-center space-x-1 shrink-0">
                           <CheckCircle2 className="w-3 h-3" />
-                          <span>Uploaded</span>
+                          <span>{matchingDocs.length > 1 ? `${matchingDocs.length} Uploaded` : 'Uploaded'}</span>
                         </span>
                       ) : req.isMandatory ? (
-                        <span className="text-[10px] font-semibold bg-rose-900/60 text-rose-300 border border-rose-700/50 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-semibold bg-rose-900/60 text-rose-300 border border-rose-700/50 px-2 py-0.5 rounded shrink-0">
                           Required
                         </span>
                       ) : (
-                        <span className="text-[10px] font-medium bg-[#2A2D35] text-gray-400 px-2 py-0.5 rounded">
+                        <span className="text-[10px] font-medium bg-[#2A2D35] text-gray-400 px-2 py-0.5 rounded shrink-0">
                           Optional
                         </span>
                       )}

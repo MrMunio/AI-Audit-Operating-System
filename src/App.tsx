@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Header 
+import {
+  Header
 } from './components/Header';
-import { 
-  ModuleSelector 
+import {
+  ModuleSelector
 } from './components/ModuleSelector';
-import { 
-  DocumentUploader 
+import {
+  DocumentUploader
 } from './components/DocumentUploader';
-import { 
-  ExtractionReviewer 
+import {
+  ExtractionReviewer
 } from './components/ExtractionReviewer';
-import { 
-  MissingEvidencePanel 
+import {
+  MissingEvidencePanel
 } from './components/MissingEvidencePanel';
-import { 
-  AuditRuleResults 
+import {
+  AuditRuleResults
 } from './components/AuditRuleResults';
-import { 
-  ReportGenerator 
+import {
+  ReportGenerator
 } from './components/ReportGenerator';
-import { 
-  SystemConfigModal 
+import {
+  SystemConfigModal
 } from './components/SystemConfigModal';
 
-import { AUDIT_MODULES, getAuditModule } from './config/auditModules';
+import { AUDIT_MODULES, getAuditModule, getModuleFields } from './config/auditModules';
 import { SAMPLE_PACKS } from './config/samplePacks';
-import { 
-  AuditModule, 
-  AuditSession, 
-  ExtractedFieldMap, 
-  MissingEvidenceItem, 
-  SystemConfig, 
-  UploadedDocument 
+import {
+  AuditModule,
+  AuditSession,
+  ExtractedFieldMap,
+  MissingEvidenceItem,
+  SystemConfig,
+  UploadedDocument
 } from './types/audit';
 import { evaluateModuleRules, computeMissingEvidence, computeOverallRiskScore } from './services/ruleEngine';
 
@@ -123,7 +123,7 @@ export default function App() {
     }
   };
 
-  // Trigger LLM Extraction — Per-Document Scoped
+  // Trigger LLM Extraction — Multi-Document Category Grouped
   const handleRunExtraction = async () => {
     if (!activeModule || uploadedDocs.length === 0) return;
 
@@ -132,24 +132,39 @@ export default function App() {
     setCurrentStep('extraction');
 
     try {
-      // Build per-document scoped payload using documentFieldSchemas
-      const documentPayloads = uploadedDocs.map(doc => {
-        // Look up scoped field schema for this document's classified type
-        const scopedFields = activeModule.documentFieldSchemas?.[doc.classifiedType];
+      // Group uploaded documents by classifiedType
+      const categoriesMap = new Map<string, {
+        categoryKey: string;
+        categoryName: string;
+        schema: any;
+        documents: Array<{ id: string; filename: string; pageCount: number; rawText: string }>;
+      }>();
 
-        // Fall back to full module schema if no scoped schema exists for this type
-        const fields = scopedFields ?? activeModule.extractedFieldsSchema;
-
-        // Find the human-readable name for this document type
-        const reqDoc = activeModule.requiredDocuments.find(r => r.type === doc.classifiedType);
-
-        return {
-          filename: doc.filename,
-          classifiedType: doc.classifiedType,
-          documentTypeName: reqDoc?.name ?? doc.classifiedType,
-          rawText: doc.rawText || '',
-          fields: fields,
+      uploadedDocs.forEach(doc => {
+        const catKey = doc.classifiedType || 'supporting_document';
+        const reqDoc = activeModule.requiredDocuments.find(r => r.type === catKey);
+        const schema = activeModule.documentFieldSchemas?.[catKey] || {
+          type: 'object',
+          title: reqDoc?.name || catKey,
+          description: reqDoc?.description || '',
+          properties: {}
         };
+
+        if (!categoriesMap.has(catKey)) {
+          categoriesMap.set(catKey, {
+            categoryKey: catKey,
+            categoryName: reqDoc?.name || catKey.replace(/_/g, ' '),
+            schema: schema,
+            documents: []
+          });
+        }
+
+        categoriesMap.get(catKey)!.documents.push({
+          id: doc.id,
+          filename: doc.filename,
+          pageCount: doc.pageCount || 1,
+          rawText: doc.rawText || ''
+        });
       });
 
       const res = await fetch('/api/audit/extract-fields', {
@@ -157,7 +172,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           moduleTitle: activeModule.title,
-          documents: documentPayloads,
+          categories: Array.from(categoriesMap.values()),
         })
       });
 
@@ -175,22 +190,43 @@ export default function App() {
     }
   };
 
-
-  // Field Manual Override Update
-  const handleUpdateField = (key: string, newValue: any) => {
-    setExtractedFields(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        value: newValue,
-        isUserVerified: true
+  // Field Manual Override Update (Supports flat key or deep object/array paths)
+  const handleUpdateField = (key: string, newValue: any, path?: string[]) => {
+    setExtractedFields(prev => {
+      const updated = { ...prev };
+      if (path && path.length > 1) {
+        let curr: any = updated;
+        for (let i = 0; i < path.length - 1; i++) {
+          if (!curr[path[i]]) curr[path[i]] = {};
+          curr = curr[path[i]];
+        }
+        const lastKey = path[path.length - 1];
+        if (curr[lastKey] && typeof curr[lastKey] === 'object' && 'value' in curr[lastKey]) {
+          curr[lastKey] = {
+            ...curr[lastKey],
+            value: newValue,
+            is_user_verified: true,
+            isUserVerified: true
+          };
+        } else {
+          curr[lastKey] = newValue;
+        }
+      } else {
+        const existing = updated[key] || {};
+        updated[key] = {
+          ...existing,
+          value: newValue,
+          is_user_verified: true,
+          isUserVerified: true
+        };
       }
-    }));
+      return updated;
+    });
   };
 
   // Missing Evidence Waiver Update
   const handleUpdateMissingItem = (updatedItem: MissingEvidenceItem) => {
-    setMissingEvidenceList(prev => prev.map(item => 
+    setMissingEvidenceList(prev => prev.map(item =>
       item.documentType === updatedItem.documentType ? updatedItem : item
     ));
   };
@@ -248,19 +284,18 @@ export default function App() {
               {[
                 { id: 'module_select', label: '1. Select Module' },
                 { id: 'uploader', label: '2. Upload Evidence' },
-                { id: 'extraction', label: '3. Extracted Fields' },
-                { id: 'missing_evidence', label: '4. Missing Evidence' },
+                { id: 'missing_evidence', label: '3. Missing Evidence' },
+                { id: 'extraction', label: '4. Extracted Fields' },
                 { id: 'rules', label: '5. Rule Engine' },
                 { id: 'report', label: '6. Final Report' },
               ].map(step => (
                 <button
                   key={step.id}
                   onClick={() => setCurrentStep(step.id as any)}
-                  className={`flex items-center space-x-1.5 transition cursor-pointer font-mono ${
-                    currentStep === step.id
+                  className={`flex items-center space-x-1.5 transition cursor-pointer font-mono ${currentStep === step.id
                       ? 'text-blue-400 font-bold border-b-2 border-blue-500 pb-0.5'
                       : 'text-gray-400 hover:text-gray-200'
-                  }`}
+                    }`}
                 >
                   <span>{step.label}</span>
                 </button>
@@ -286,20 +321,15 @@ export default function App() {
             onAddDocument={handleAddDocument}
             onAddDocuments={handleAddDocuments}
             onRemoveDocument={handleRemoveDocument}
-            onProceedToExtraction={handleRunExtraction}
+            onProceedToExtraction={() => {
+              const activeMissing = missingEvidenceList.filter(item => item.status === 'missing');
+              if (activeMissing.length > 0) {
+                setCurrentStep('missing_evidence');
+              } else {
+                handleRunExtraction();
+              }
+            }}
             onLoadSamplePack={() => handleLoadSamplePack(activeModule.id)}
-          />
-        )}
-
-
-        {currentStep === 'extraction' && activeModule && (
-          <ExtractionReviewer
-            module={activeModule}
-            extractedFields={extractedFields}
-            onUpdateField={handleUpdateField}
-            onProceedToRules={() => setCurrentStep('missing_evidence')}
-            onReExtract={handleRunExtraction}
-            isExtracting={isExtracting}
           />
         )}
 
@@ -309,7 +339,18 @@ export default function App() {
             uploadedDocs={uploadedDocs}
             missingEvidenceList={missingEvidenceList}
             onUpdateMissingItem={handleUpdateMissingItem}
+            onProceedToRules={handleRunExtraction}
+          />
+        )}
+
+        {currentStep === 'extraction' && activeModule && (
+          <ExtractionReviewer
+            module={activeModule}
+            extractedFields={extractedFields}
+            onUpdateField={handleUpdateField}
             onProceedToRules={handleRunRules}
+            onReExtract={handleRunExtraction}
+            isExtracting={isExtracting}
           />
         )}
 

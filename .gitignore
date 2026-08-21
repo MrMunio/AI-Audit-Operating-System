@@ -7,3 +7,6 @@ coverage/
 .env*
 !.env.example
 test_docs/
+dev_space/
+scratch/
+.agents/

@@ -1,0 +1,12 @@
+{
+  "fuzzyMatchThreshold": 0.70,
+  "maxMultiFilesClassify": 10,
+  "extractionMaxWords": 200000,
+  "defaultLlmProvider": "gemini",
+  "defaultLlmModelId": "gemini-3.6-flash",
+  "defaultLlmBaseUrl": "https://api.openai.com/v1",
+  "defaultOcrEngine": "tesseract",
+  "defaultDatabaseUrl": "sqlite:./audit_os.db",
+  "leadAuditReviewerName": "David Vance, CPA, CIA",
+  "leadAuditReviewerTitle": "Authorized Audit Partner"
+}

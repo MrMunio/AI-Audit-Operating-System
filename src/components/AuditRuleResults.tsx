@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  AlertTriangle, 
-  ShieldAlert, 
-  ArrowRight, 
-  FileSearch, 
+import {
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ShieldAlert,
+  ArrowRight,
+  FileSearch,
   Sparkles,
   Download,
   Check,
@@ -63,9 +63,8 @@ export const AuditRuleResults: React.FC<AuditRuleResultsProps> = ({
             <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Audit Assessment Score
             </span>
-            <span className={`text-xl font-extrabold tracking-wide mt-1 ${
-              failCount > 0 ? 'text-rose-400' : warningCount > 0 ? 'text-amber-400' : 'text-emerald-400'
-            }`}>
+            <span className={`text-xl font-extrabold tracking-wide mt-1 ${failCount > 0 ? 'text-rose-400' : warningCount > 0 ? 'text-amber-400' : 'text-emerald-400'
+              }`}>
               {overallRiskScore}
             </span>
             <div className="flex items-center space-x-3 text-xs text-gray-300 mt-2">
@@ -91,11 +90,10 @@ export const AuditRuleResults: React.FC<AuditRuleResultsProps> = ({
             <button
               key={tab.id}
               onClick={() => setStatusFilter(tab.id)}
-              className={`px-3.5 py-1.5 rounded text-xs font-mono transition cursor-pointer ${
-                statusFilter === tab.id
+              className={`px-3.5 py-1.5 rounded text-xs font-mono transition cursor-pointer ${statusFilter === tab.id
                   ? 'bg-blue-600 text-white font-bold shadow-md'
                   : 'text-gray-400 hover:text-white hover:bg-[#1A1D23]'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
@@ -121,23 +119,21 @@ export const AuditRuleResults: React.FC<AuditRuleResultsProps> = ({
           return (
             <div
               key={finding.id}
-              className={`bg-[#0F1117] rounded-xl border p-6 transition shadow-lg ${
-                isFail
+              className={`bg-[#0F1117] rounded-xl border p-6 transition shadow-lg ${isFail
                   ? 'border-rose-800/50 bg-rose-950/10'
                   : isWarning
-                  ? 'border-amber-800/50 bg-amber-950/10'
-                  : 'border-[#2A2D35]'
-              }`}
+                    ? 'border-amber-800/50 bg-amber-950/10'
+                    : 'border-[#2A2D35]'
+                }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                 <div className="flex items-start space-x-3.5">
-                  <div className={`p-2.5 rounded shrink-0 ${
-                    isFail
+                  <div className={`p-2.5 rounded shrink-0 ${isFail
                       ? 'bg-rose-950/60 text-rose-400 border border-rose-800/50'
                       : isWarning
-                      ? 'bg-amber-950/60 text-amber-400 border border-amber-800/50'
-                      : 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
-                  }`}>
+                        ? 'bg-amber-950/60 text-amber-400 border border-amber-800/50'
+                        : 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
+                    }`}>
                     {isFail ? <XCircle className="w-6 h-6" /> : isWarning ? <AlertTriangle className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
                   </div>
 
@@ -151,20 +147,19 @@ export const AuditRuleResults: React.FC<AuditRuleResultsProps> = ({
                       </h4>
                     </div>
 
-                    <p className="text-xs text-gray-300 mt-2 leading-relaxed font-sans">
+                    <div className="text-xs text-gray-300 mt-2.5 leading-relaxed font-sans whitespace-pre-line space-y-1">
                       {finding.description}
-                    </p>
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 shrink-0">
-                  <span className={`px-3 py-1 rounded text-xs font-bold font-mono uppercase tracking-wider ${
-                    isFail
+                  <span className={`px-3 py-1 rounded text-xs font-bold font-mono uppercase tracking-wider ${isFail
                       ? 'bg-rose-950/60 text-rose-300 border border-rose-800/50'
                       : isWarning
-                      ? 'bg-amber-950/60 text-amber-300 border border-amber-800/50'
-                      : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50'
-                  }`}>
+                        ? 'bg-amber-950/60 text-amber-300 border border-amber-800/50'
+                        : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50'
+                    }`}>
                     {finding.status}
                   </span>
                 </div>
@@ -187,7 +182,7 @@ export const AuditRuleResults: React.FC<AuditRuleResultsProps> = ({
                             Page {cite.pageNumber}
                           </span>
                         </div>
-                        <div className="text-[11px] text-gray-400 mt-1">
+                        <div className="text-[11px] text-gray-400 mt-1 break-words">
                           {cite.fieldName}: <strong className="text-blue-400">{cite.extractedValue}</strong>
                         </div>
                       </div>
@@ -198,9 +193,11 @@ export const AuditRuleResults: React.FC<AuditRuleResultsProps> = ({
 
               {/* Auditor Recommendation */}
               {finding.recommendation && (
-                <div className="mt-3 pt-3 border-t border-[#2A2D35] text-xs text-gray-300 font-sans">
-                  <strong className="text-white font-mono">Auditor Recommended Action:</strong>{' '}
-                  <span className="text-gray-300">{finding.recommendation}</span>
+                <div className="mt-3.5 pt-3.5 border-t border-[#2A2D35] text-xs text-gray-300 font-sans">
+                  <strong className="text-white font-mono block mb-1">Auditor Recommended Action:</strong>
+                  <div className="text-gray-300 whitespace-pre-line leading-relaxed pl-1">
+                    {finding.recommendation}
+                  </div>
                 </div>
               )}
             </div>

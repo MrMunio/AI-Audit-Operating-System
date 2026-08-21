@@ -73,7 +73,7 @@ export const MissingEvidencePanel: React.FC<MissingEvidencePanelProps> = ({
           onClick={onProceedToRules}
           className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-500 text-white font-mono font-bold text-xs px-4 py-2.5 rounded shadow-lg shadow-blue-900/30 transition cursor-pointer self-start sm:self-auto"
         >
-          <span>CONTINUE_TO_RULE_ENGINE</span>
+          <span>PROCEED_TO_EXTRACTION</span>
         </button>
       </div>
 
